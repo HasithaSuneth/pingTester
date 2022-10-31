@@ -61,7 +61,7 @@ def msg_create(result, to_name):
     for i in result:
         msg = msg + "<li><b>{} ({})</b></li>".format(i[0], i[1])
     msg = msg + "</ul>"
-    msg = msg + "<br><hr><i>This is an auto-generated email by MoT-pingTester.</i><hr>"
+    msg = msg + "<br><hr><i>This is an auto-generated email by pingTester.</i><hr>"
     return msg
 
 
