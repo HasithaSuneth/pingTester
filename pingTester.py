@@ -4,6 +4,7 @@ import getopt
 import platform
 import email.message
 import smtplib
+from slack_sdk import WebClient
 
 hostList = {"Device 01": "192.168.8.100",
             "Device 02": "192.168.8.101"}
@@ -11,6 +12,9 @@ numOfTests = "1"
 to_name = "Receiver_Name"
 to_email = "Receiver_Email"
 cc_email = ['CC_email_1', 'CC_email_2']
+
+slack_token = "bot-token"
+slack_channel = '#channel-name'
 
 
 def connectionTest(numOfTests, hostList):
@@ -31,6 +35,27 @@ def ping(numOfTests, host):
     if ttl in resultado:
         res = True
     return res
+
+
+def slack_msg_send(slack_token, slack_channel, msg):
+    client = WebClient(token=slack_token)
+    client.chat_postMessage(channel=slack_channel, blocks=msg)
+
+
+def slack_msg_create(result):
+    temp_msg = ""
+    for i in result:
+        temp_msg = temp_msg + ":electric_plug: {} ({}) \n".format(i[0], i[1])
+    msg = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": 'Warning! unreachable device/s detected. :mega: \n' + temp_msg
+            }
+        }
+    ]
+    return msg
 
 
 def email_send(name, email_addr, username, password, server, port, emailfrom, msg, cc_email):
@@ -99,15 +124,18 @@ def user_arg(argv):
     return arg_emailuser, arg_emailpass, arg_emailserv, arg_emailport, arg_emailfrom
 
 
-def main(to_name, to_email, cc_email, numOfTests, hostList):
+def main(to_name, to_email, cc_email, numOfTests, hostList, slack_token, slack_channel):
     if __name__ == "__main__":
         emailuser, emailpass, emailserv, emailport, emailfrom = user_arg(
             sys.argv)
     result = connectionTest(numOfTests, hostList)
     if result != []:
-        msg = msg_create(result, to_name)
+        email_msg = msg_create(result, to_name)
+        slack_msg = slack_msg_create(result)
         email_send(to_name, to_email, emailuser, emailpass,
-                   emailserv, emailport, emailfrom, msg, cc_email)
+                   emailserv, emailport, emailfrom, email_msg, cc_email)
+        slack_msg_send(slack_token, slack_channel, slack_msg)
 
 
-main(to_name, to_email, cc_email, numOfTests, hostList)
+main(to_name, to_email, cc_email, numOfTests,
+     hostList, slack_token, slack_channel)
